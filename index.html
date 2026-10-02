@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ROBOFORGE // 6-DOF Industrial Workcell & Offline Programmer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script type="module" crossorigin src="/assets/index-DAR6WtsC.js"></script>
+  <link rel="stylesheet" crossorigin href="/assets/index-DCwu6tL8.css">
+</head>
+<body>
+  <div id="app">
+    <!-- Top Navigation Bar -->
+    <header class="top-nav">
+      <div class="nav-brand">
+        <div class="brand-logo">
+          <svg viewBox="0 0 24 24">
+            <path d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7h1a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v1a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-1H2a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h1a7 7 0 0 1 7-7h1V5.73c-.6-.34-1-.99-1-1.73a2 2 0 0 1 2-2M7.5 13A2.5 2.5 0 0 0 5 15.5 2.5 2.5 0 0 0 7.5 18a2.5 2.5 0 0 0 2.5-2.5A2.5 2.5 0 0 0 7.5 13m9 0a2.5 2.5 0 0 0-2.5 2.5 2.5 2.5 0 0 0 2.5 2.5 2.5 2.5 0 0 0 2.5-2.5 2.5 2.5 0 0 0-2.5-2.5z"/>
+          </svg>
+        </div>
+        <div class="brand-titles">
+          <span class="brand-title">ROBOFORGE</span>
+          <span class="brand-subtitle">INDUSTRIAL ROBOTICS STUDIO</span>
+        </div>
+      </div>
+
+      <div class="nav-center">
+        <!-- Preset Routine Selector -->
+        <div class="nav-control-wrap">
+          <span class="nav-label">ROUTINE:</span>
+          <select id="nav-preset-select" class="nav-select">
+            <option value="pick_and_place">Pick & Place (Feeder ➜ Pallet)</option>
+            <option value="conveyor_sort">Conveyor Optical Beam Sort</option>
+            <option value="seam_contour">3D Seam Welding & Arc Sparks (MIG)</option>
+            <option value="palletizing_matrix">Vision Laser Inspection & Pallet Matrix</option>
+          </select>
+        </div>
+
+        <!-- Simulation Execution Deck -->
+        <div class="sim-controls-group">
+          <button id="nav-play-pause-btn" class="sim-btn sim-play-btn" title="Start / Stop Program (Spacebar)">
+            <span class="sim-icon" id="nav-play-icon">▶</span>
+            <span id="nav-play-label">PAUSED</span>
+          </button>
+          <button id="nav-step-btn" class="sim-btn sim-step-btn" title="Step 1 Instruction Forward (.)">
+            <span>⏭ STEP</span>
+          </button>
+          <button id="nav-restart-btn" class="sim-btn sim-restart-btn" title="Restart / Reset Program to Step 1 and Return Robot Home (R)">
+            <span class="sim-icon">🔄</span>
+            <span class="restart-label">RESTART / RESET</span>
+          </button>
+          <select id="nav-speed-select" class="sim-speed-select" title="Execution Speed">
+            <option value="0.25">0.25x</option>
+            <option value="0.5">0.5x</option>
+            <option value="1" selected>1.0x</option>
+            <option value="2">2.0x</option>
+          </select>
+        </div>
+
+        <!-- Paint Theme Selector -->
+        <div class="nav-control-wrap">
+          <span class="nav-label">ARM SPEC:</span>
+          <select id="robot-theme-select" class="nav-select">
+            <option value="fanuc">FANUC Yellow (R-2000iC)</option>
+            <option value="kuka">KUKA Orange (KR QUANTEC)</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="nav-actions">
+        <button id="nav-estop-btn" class="btn-action btn-estop" title="Emergency Stop Halts Robot Immediately">
+          <span>🛑 E-STOP</span>
+        </button>
+        <button id="nav-sound-btn" class="btn-action" title="Mute or Unmute Procedural Sound">
+          <span>🔊 SOUND</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Workspace Split-Screen -->
+    <main class="main-workspace">
+      <!-- Left: 3D Robotic Workcell Viewport -->
+      <section class="viewport-section">
+        <div id="viewport-3d-container" class="viewport-container"></div>
+
+        <!-- Viewport Floating HUD Overlay -->
+        <div class="viewport-hud-top">
+          <div class="hud-tag-box">
+            <span class="hud-status-dot"></span>
+            <span class="hud-status-text">CELL ACTIVE // 6-AXIS KINEMATICS</span>
+          </div>
+
+          <div class="gizmo-mode-buttons">
+            <button id="btn-spawn-part-jaw" class="gizmo-btn btn-spawn" title="Spawn a workpiece directly in the robot gripper jaws">📦 SPAWN IN JAW</button>
+            <button id="btn-reset-parts" class="gizmo-btn" title="Reset all workpieces onto feeder and conveyor">🔄 RESET PARTS</button>
+            <span class="gizmo-lbl" style="margin-left: 8px;">VIEW:</span>
+            <button id="cam-view-iso" class="gizmo-btn active" title="Isometric 3-Station Cell View">ISO</button>
+            <button id="cam-view-stn1" class="gizmo-btn" title="Station 1 (Infeed Conveyor & Feeder)">STN 1</button>
+            <button id="cam-view-stn2" class="gizmo-btn" title="Station 2 (Weld Fixture & Vision)">STN 2</button>
+            <button id="cam-view-stn3" class="gizmo-btn" title="Station 3 (Pallet Matrix & Outfeed)">STN 3</button>
+            <button id="cam-view-rear" class="gizmo-btn" title="Rear Maintenance Bay & LOTO Console">REAR BAY</button>
+            <button id="cam-view-bot" class="gizmo-btn" title="2026 Autonomous Maint-Bot AMR">🤖 MAINT-BOT</button>
+            <span class="gizmo-lbl" style="margin-left: 8px;">GIZMO:</span>
+            <button id="gizmo-mode-translate" class="gizmo-btn active" title="Translate TCP along XYZ">XYZ</button>
+            <button id="gizmo-mode-rotate" class="gizmo-btn" title="Rotate TCP Rx Ry Rz">ROT</button>
+            <button id="gizmo-toggle-btn" class="gizmo-btn active" title="Toggle 3D Gizmo visibility">SHOW</button>
+          </div>
+        </div>
+
+        <div class="viewport-hud-bottom">
+          <span class="hint-text">💡 Drag 3D TCP Gizmo to solve Inverse Kinematics in real-time | Spacebar: Run/Pause | Right-Click + Drag: Orbit</span>
+        </div>
+      </section>
+
+      <!-- Right: Industrial Programming & Control Deck -->
+      <section class="control-deck-section">
+        <!-- Tab Navigation Bar -->
+        <nav class="deck-tabs-nav">
+          <button class="deck-nav-tab active" data-tab="tab-content-pendant">
+            <span class="tab-icon">🕹️</span>
+            <span>TEACH PENDANT</span>
+          </button>
+          <button class="deck-nav-tab" data-tab="tab-content-program">
+            <span class="tab-icon">📋</span>
+            <span>PROGRAM</span>
+          </button>
+          <button class="deck-nav-tab" data-tab="tab-content-io">
+            <span class="tab-icon">⚡</span>
+            <span>DIGITAL I/O</span>
+          </button>
+          <button class="deck-nav-tab" data-tab="tab-content-tasks">
+            <span class="tab-icon">🎯</span>
+            <span>TASKS</span>
+          </button>
+          <button class="deck-nav-tab" data-tab="tab-content-export">
+            <span class="tab-icon">💾</span>
+            <span>EXPORT</span>
+          </button>
+        </nav>
+
+        <!-- Tab Content Containers -->
+        <div class="deck-content-panels">
+          <!-- 1. Teach Pendant Panel -->
+          <div id="tab-content-pendant" class="deck-tab-panel active"></div>
+
+          <!-- 2. Program Sequencer Panel -->
+          <div id="tab-content-program" class="deck-tab-panel"></div>
+
+          <!-- 3. Digital I/O Deck Panel -->
+          <div id="tab-content-io" class="deck-tab-panel"></div>
+
+          <!-- 4. Certification Tasks Panel -->
+          <div id="tab-content-tasks" class="deck-tab-panel"></div>
+
+          <!-- 5. Code Export Panel -->
+          <div id="tab-content-export" class="deck-tab-panel">
+            <div class="export-panel-inner">
+              <div class="export-header-row">
+                <div class="dialect-select-wrap">
+                  <span class="dialect-lbl">TARGET CONTROLLER:</span>
+                  <select id="export-dialect-select" class="nav-select">
+                    <option value="fanuc">FANUC Karel / TP (.ls)</option>
+                    <option value="kuka">KUKA KRL (.src)</option>
+                    <option value="urscript">Universal Robots (URScript)</option>
+                    <option value="python">Python Automation Script (.py)</option>
+                  </select>
+                </div>
+                <button id="export-copy-btn" class="btn-action btn-copy">
+                  <span>COPY CODE</span>
+                </button>
+              </div>
+              <pre class="code-editor-box"><code id="export-code-display">// Generated robot code will appear here...</code></pre>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+</body>
+</html>
